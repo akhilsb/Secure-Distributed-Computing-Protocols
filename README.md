@@ -57,6 +57,7 @@ pub async fn spawn(config: Node)-> (anyhow::Result<oneshot::Sender<()>>, Vec<Res
 
     let mut statuses = Vec::new();
 
+    // Start Cachin-Tessaro RBC protocol
     let _rbc_serv_status = ctrbc::Context::spawn(
         config,
         ctrbc_req_recv_channel, 
@@ -145,22 +146,18 @@ This implementation is part of ongoing research in secure distributed computing,
 - **genconfig** - Configuration generation utility
 
 ## References
-```
-Cachin, Christian, and Stefano Tessaro. "Asynchronous verifiable information dispersal." 24th IEEE Symposium on Reliable Distributed Systems (SRDS'05). IEEE, 2005.
+[1] Cachin, Christian, and Stefano Tessaro. "Asynchronous verifiable information dispersal." 24th IEEE Symposium on Reliable Distributed Systems (SRDS'05). IEEE, 2005.
 
-Alhaddad, Nicolas, Sourav Das, Sisi Duan, Ling Ren, Mayank Varia, Zhuolun Xiang, and Haibin Zhang. "Balanced byzantine reliable broadcast with near-optimal communication and improved computation." In Proceedings of the 2022 ACM Symposium on Principles of Distributed Computing, pp. 399-417. 2022.
+[2] Alhaddad, Nicolas, Sourav Das, Sisi Duan, Ling Ren, Mayank Varia, Zhuolun Xiang, and Haibin Zhang. "Balanced byzantine reliable broadcast with near-optimal communication and improved computation." In Proceedings of the 2022 ACM Symposium on Principles of Distributed Computing, pp. 399-417. 2022.
 
-Das, Sourav, Sisi Duan, Shengqi Liu, Atsuki Momose, Ling Ren, and Victor Shoup. "Asynchronous consensus without trusted setup or public-key cryptography." In Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security, pp. 3242-3256. 2024.
+[3] Das, Sourav, Sisi Duan, Shengqi Liu, Atsuki Momose, Ling Ren, and Victor Shoup. "Asynchronous consensus without trusted setup or public-key cryptography." In Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security, pp. 3242-3256. 2024.
 
-Bandarupalli, Akhil, Adithya Bhat, Saurabh Bagchi, Aniket Kate, and Michael K. Reiter. "Random beacons in monte carlo: Efficient asynchronous random beacon without threshold cryptography." In Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security, pp. 2621-2635. 2024.
+[4] Bandarupalli, Akhil, Adithya Bhat, Saurabh Bagchi, Aniket Kate, and Michael K. Reiter. "Random beacons in monte carlo: Efficient asynchronous random beacon without threshold cryptography." In Proceedings of the 2024 on ACM SIGSAC Conference on Computer and Communications Security, pp. 2621-2635. 2024.
 
-Yang, Lei, Seo Jin Park, Mohammad Alizadeh, Sreeram Kannan, and David Tse. "{DispersedLedger}:{High-Throughput} byzantine consensus on variable bandwidth networks." In 19th USENIX Symposium on Networked Systems Design and Implementation (NSDI 22), pp. 493-512. 2022.
+[5] Yang, Lei, Seo Jin Park, Mohammad Alizadeh, Sreeram Kannan, and David Tse. "{DispersedLedger}:{High-Throughput} byzantine consensus on variable bandwidth networks." In 19th USENIX Symposium on Networked Systems Design and Implementation (NSDI 22), pp. 493-512. 2022.
 
-Abraham, Ittai, Naama Ben-David, and Sravya Yandamuri. "Efficient and adaptively secure asynchronous binary agreement via binding crusader agreement." In Proceedings of the 2022 ACM Symposium on Principles of Distributed Computing, pp. 381-391. 2022.
+[6] Abraham, Ittai, Naama Ben-David, and Sravya Yandamuri. "Efficient and adaptively secure asynchronous binary agreement via binding crusader agreement." In Proceedings of the 2022 ACM Symposium on Principles of Distributed Computing, pp. 381-391. 2022.
 
-Duan, Sisi, Xin Wang, and Haibin Zhang. "Fin: Practical signature-free asynchronous common subset in constant time." In Proceedings of the 2023 ACM SIGSAC Conference on Computer and Communications Security, pp. 815-829. 2023.
+[7] Duan, Sisi, Xin Wang, and Haibin Zhang. "Fin: Practical signature-free asynchronous common subset in constant time." In Proceedings of the 2023 ACM SIGSAC Conference on Computer and Communications Security, pp. 815-829. 2023.
 
-Moniz, Henrique. "The Istanbul BFT consensus algorithm." arXiv preprint arXiv:2002.03613 (2020).
-
-
-```
+[8] Moniz, Henrique. "The Istanbul BFT consensus algorithm." arXiv preprint arXiv:2002.03613 (2020).
