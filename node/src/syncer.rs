@@ -4,7 +4,7 @@ use anyhow::{Result, anyhow};
 use fnv::FnvHashMap;
 use network::{plaintcp::{TcpReceiver, TcpReliableSender, CancelHandler}, Acknowledgement};
 use tokio::{sync::{oneshot, mpsc::{unbounded_channel, UnboundedReceiver}}, time};
-use types::{Replica, SyncMsg, SyncState, RBCSyncMsg};
+use types::{Replica, SyncMsg, SyncState, ProtSyncMsg};
 //use std::fs::read_to_string;
 
 use crate::SyncHandler;
@@ -127,7 +127,7 @@ impl Syncer{
                             log::info!("Got COMPLETED message from node {}",msg.sender);
                             
                             // deserialize message
-                            let rbc_msg: RBCSyncMsg = bincode::deserialize(&msg.value).expect("Unable to deserialize message received from node");
+                            let rbc_msg: ProtSyncMsg = bincode::deserialize(&msg.value).expect("Unable to deserialize message received from node");
                             
                             let latency_map = self.rbc_complete_times.entry(rbc_msg.id).or_default();
                             latency_map.insert(msg.sender, SystemTime::now()
@@ -136,7 +136,7 @@ impl Syncer{
                             .as_millis());
                             
                             let value_set = self.rbc_comp_values.entry(rbc_msg.id).or_default();
-                            value_set.insert(rbc_msg.msg.to_string());
+                            value_set.insert(rbc_msg.status.to_string());
                             if latency_map.len() == self.num_nodes{
 
                                 let start_time = self.rbc_start_times.get(&rbc_msg.id).unwrap();
@@ -168,10 +168,11 @@ impl Syncer{
                             continue;
                         }
                         self.rbc_id += 1;
-                        let sync_rbc_msg = RBCSyncMsg{
+                        let sync_rbc_msg = ProtSyncMsg{
                             id: self.rbc_id,
                             //msg: self.broadcast_msgs.get(&self.rbc_id-1).unwrap().to_string(),
-                            msg: "Start".to_string()
+                            status: "Start".to_string(),
+                            value: vec![],
                         };
                         let binaryfy_val = bincode::serialize(&sync_rbc_msg).expect("Failed to serialize client message");
                         // let cancel_handler:CancelHandler<Acknowledgement> = self.net_send.send(0, SyncMsg { 

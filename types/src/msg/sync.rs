@@ -20,9 +20,10 @@ pub struct SyncMsg{
 }
 
 #[derive(Debug,Serialize,Deserialize,Clone)]
-pub struct RBCSyncMsg{
+pub struct ProtSyncMsg{
     pub id: usize,
-    pub msg: String,
+    pub status: String,
+    pub value: Vec<u8>,
 }
 
 impl WireReady for SyncMsg{
