@@ -53,7 +53,7 @@ impl Context{
         }
         
         // Termination Gadget value
-        if representative_rep == self.num_nodes{
+        if representative_rep == self.num_nodes && self.acs_state.re_broadcast_messages.contains_key(&value){
             // Output this value finally
             log::info!("ACS output of value {}", value);
             log::info!("ACS output {:?}", self.acs_state.re_broadcast_messages.get(&value).unwrap());
