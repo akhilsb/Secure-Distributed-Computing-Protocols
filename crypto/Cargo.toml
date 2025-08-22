@@ -29,3 +29,7 @@ criterion = { version = "0.2", features = ["html_reports"] }
 [[bench]]
 name="hardware_accelerated_hash"
 harness= false
+
+[[bench]]
+name="hash_func_performance_message_sizes"
+harness= false
