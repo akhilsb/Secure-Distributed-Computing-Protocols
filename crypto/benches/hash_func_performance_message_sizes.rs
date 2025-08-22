@@ -31,11 +31,13 @@ fn do_hash_aes(bytes: &[u8]) -> Hash{
     if bytes.len() < 2*HASH_SIZE{
         let mut vec = bytes.to_vec();
         // Append zeros to make the input a multiple of 32 bytes
-        let remainder = vec.len() % 2*HASH_SIZE;
+        let remainder = vec.len() % 64;
+        println!("Remainder is {}", remainder);
         if remainder != 0 {
-            let padding_needed = 2*HASH_SIZE - remainder;
+            let padding_needed = 64 - remainder;
             vec.extend(vec![0u8; padding_needed]);
         }
+        println!("Padded length is {}", vec.len());
         let mut slice1: Hash = [0u8;32];
         let mut slice2: Hash = [0u8;32];
 
@@ -102,7 +104,7 @@ fn hash_func_benchmark(c : &mut Criterion){
     c.bench_function("sha_hash_100kb", |b| b.iter(|| do_hash(black_box([0u8;102400].to_vec()))));
     c.bench_function("sha_hash_1mb", |b| b.iter(|| do_hash(black_box([0u8;1024000].to_vec()))));
 
-    c.bench_function("aes_hash_10kb", |b| b.iter(|| do_hash_aes(black_box(&[0u8;10240]))));
+    c.bench_function("aes_hash_10kb", |b| b.iter(|| do_hash_aes(black_box(&[0u8;11]))));
     c.bench_function("aes_hash_100kb", |b| b.iter(|| do_hash_aes(black_box(&[0u8;102400]))));
     c.bench_function("aes_hash_1mb", |b| b.iter(|| do_hash_aes(black_box(&[0u8;1024000]))));
 }

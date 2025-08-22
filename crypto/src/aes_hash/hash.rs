@@ -1,4 +1,6 @@
 use aes::{cipher::{generic_array::GenericArray, KeyInit, BlockEncrypt}, Aes128Enc};
+
+use crate::{aes_hash::{MerkleTree, HASH_SIZE}, hash::Hash};
 //use sha2::{Sha256, Digest};
 
 //use crate::hash::Hash;
@@ -172,5 +174,31 @@ impl HashState{
             output_vec.push(w_1);
         }
         return output_vec;
+    }
+
+    pub fn do_hash_aes(&self, bytes: &[u8])->[u8;32]{
+        if bytes.len() < 64{
+            let mut vec = bytes.to_vec();
+            // Append zeros to make the input a multiple of 32 bytes
+            let remainder = vec.len() % 64;
+            if remainder != 0 {
+                let padding_needed = 64 - remainder;
+                vec.extend(vec![0u8; padding_needed]);
+            }
+            let mut slice1: Hash = [0u8;32];
+            let mut slice2: Hash = [0u8;32];
+
+            slice1.copy_from_slice(&vec[0..32]);
+            slice2.copy_from_slice(&vec[32..64]);
+            return self.hash_two(slice1, slice2);
+        }
+        else{
+            let chunks: Vec<Hash> = bytes.chunks(HASH_SIZE).map(|x|{
+                let mut hash = [0u8;HASH_SIZE];
+                hash[0..x.len()].copy_from_slice(x);
+                return hash;
+            }).collect();
+            return MerkleTree::new(chunks, self).root();
+        }
     }
 }
