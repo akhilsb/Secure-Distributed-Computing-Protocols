@@ -10,7 +10,16 @@ bincode = "1"
 config = { package = "config", path="../config"}
 
 consensus = { package = "consensus", path="../consensus"}
+
 ctrbc = {package = "ctrbc", path="../broadcast/ctrbc"}
+ccbrb = {package = "ccbrb", path="../broadcast/ccbrb"}
+acs = {package = "acs", path="../consensus/acs"}
+binary_ba = {package = "binary_ba", path="../consensus/binary_ba"}
+fin_mvba = {package = "fin_mvba", path="../consensus/fin_mvba"}
+ibft = {package = "ibft", path="../consensus/ibft"}
+ra = {package = "ra", path="../consensus/ra"}
+crypto = { package = "crypto", path="../crypto"}
+
 util = { package = "util", path="../util"}
 anyhow = "1"
 types = { package = "types", path="../types"}

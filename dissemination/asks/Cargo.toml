@@ -8,7 +8,8 @@ edition = "2021"
 
 [dependencies]
 crypto = { package = "crypto", path="../../crypto"}
-consensus = { package = "consensus", path="../"}
+dissemination = { package = "dissemination", path="../"}
+consensus = { package = "consensus", path="../../consensus"}
 types = { package = "types", path="../../types"}
 config = { package = "config", path="../../config"}
 ctrbc = { package = "ctrbc", path="../../broadcast/ctrbc"}
