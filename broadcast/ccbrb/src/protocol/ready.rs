@@ -218,152 +218,176 @@ impl Context {
             // );
 
             // if 𝐻(𝐷′) = 𝑐 then
-            if do_hash(&d_prime) == msg.c {
-                // log::info!(
-                //     "D′ matches c for instance_id: {}, c: {:?}",
-                //     instance_id,
-                //     msg.c
-                // );
-
-                let d_hashes: Vec<Hash> = match bincode::deserialize(&d_prime) {
-                    Ok(decoded) => decoded,
-                    Err(e) => {
-                        log::warn!("Failed to deserialize D′ into d_hashes: {:?}", e);
-                        return;
-                    }
-                };
-
-                // log::info!(
-                //     "after decoding D′ hashes: {:?} for instance_id: {}, c: {:?}",
-                //     d_hashes,
-                //     instance_id,
-                //     msg.c
-                // );
-                let valid_hashes: HashSet<Hash> = d_hashes.into_iter().collect();
-
-                let data_shares = rbc_context
-                    .fragments_data
-                    .get(&(instance_id as u64, msg.c))
-                    .cloned()
-                    .unwrap_or_default()
-                    .into_iter()
-                    .filter(|share| valid_hashes.contains(&do_hash(&share.data)))
-                    .collect::<Vec<_>>();
-
-                // wait for t+1 ⟨ECHO⟩ message where 𝐻(𝑑𝑗) ∈ 𝐷′and filter 𝑓𝑟𝑎𝑔𝑚𝑒𝑛𝑡𝑠𝑑𝑎𝑡𝑎[(𝑖𝑑, 𝑐)] accordingly
-                // log::info!(
-                //     "Data shares count after filtering: {} for instance_id: {}, c: {:?}",
-                //     data_shares.len(),
-                //     instance_id,
-                //     msg.c
-                // );
-                if data_shares.len() < self.num_faults + 1 {
-                    return; // wait for more
-                }
-
-                // print actual data shares
-                // log::info!(
-                //     "Data shares for instance_id: {}, c: {:?}: {:?}",
-                //     instance_id,
-                //     msg.c,
-                //     data_shares
-                // );
-
-                let mut input_shares: Vec<Option<Vec<u8>>> = vec![None; self.num_nodes];
-
-                for share in &data_shares {
-                    input_shares[share.number] = Some(share.data.clone());
-                }
-                // log::info!(
-                //     "Input shares initialized with {:?} slots for instance_id: {}, c: {:?}",
-                //     input_shares,
-                //     instance_id,
-                //     msg.c
-                // );
-
-                let n = self.num_nodes;
-                let k = self.num_faults + 1;
-
-                if reconstruct_data(&mut input_shares, k, n - k).is_err() {
-                    log::warn!("reconstruct_data failed");
+            
+            let d_hashes: Vec<Hash> = match bincode::deserialize(&d_prime) {
+                Ok(decoded) => decoded,
+                Err(e) => {
+                    log::warn!("Failed to deserialize D′ into d_hashes: {:?}", e);
                     return;
                 }
+            };
 
-                // let mut reconstructed_data = vec![];
-                // for maybe in input_shares
-                //     .iter()
-                //     .take(self.num_nodes - self.num_faults - 1)
-                // {
-                //     if let Some(ref block) = maybe {
-                //         reconstructed_data.extend_from_slice(block);
-                //     }
-                // }
+            // log::info!(
+            //     "after decoding D′ hashes: {:?} for instance_id: {}, c: {:?}",
+            //     d_hashes,
+            //     instance_id,
+            //     msg.c
+            // );
+            let valid_hashes: HashSet<Hash> = d_hashes.into_iter().collect();
 
-                // let recomputed_shards = get_shards(&mut input_shares, k, n - k);
-                let recomputed_shards = input_shares
-                    .into_iter()
-                    .map(|maybe| {
-                        maybe.unwrap_or_else(|| {
-                            log::warn!("Missing data in input shares, returning empty shard");
-                            vec![]
-                        })
+            let data_shares = rbc_context
+                .fragments_data
+                .get(&(instance_id as u64, msg.c))
+                .cloned()
+                .unwrap_or_default()
+                .into_iter()
+                .filter(|share| valid_hashes.contains(&do_hash(&share.data)))
+                .collect::<Vec<_>>();
+
+            // wait for t+1 ⟨ECHO⟩ message where 𝐻(𝑑𝑗) ∈ 𝐷′and filter 𝑓𝑟𝑎𝑔𝑚𝑒𝑛𝑡𝑠𝑑𝑎𝑡𝑎[(𝑖𝑑, 𝑐)] accordingly
+            // log::info!(
+            //     "Data shares count after filtering: {} for instance_id: {}, c: {:?}",
+            //     data_shares.len(),
+            //     instance_id,
+            //     msg.c
+            // );
+            if data_shares.len() < self.num_faults + 1 {
+                return; // wait for more
+            }
+
+            // print actual data shares
+            // log::info!(
+            //     "Data shares for instance_id: {}, c: {:?}: {:?}",
+            //     instance_id,
+            //     msg.c,
+            //     data_shares
+            // );
+
+            let mut input_shares: Vec<Option<Vec<u8>>> = vec![None; self.num_nodes];
+
+            for share in &data_shares {
+                input_shares[share.number] = Some(share.data.clone());
+            }
+            // log::info!(
+            //     "Input shares initialized with {:?} slots for instance_id: {}, c: {:?}",
+            //     input_shares,
+            //     instance_id,
+            //     msg.c
+            // );
+
+            let n = self.num_nodes;
+            let k = self.num_faults + 1;
+
+            if reconstruct_data(&mut input_shares, k, n - k).is_err() {
+                log::warn!("reconstruct_data failed");
+                return;
+            }
+
+            // let mut reconstructed_data = vec![];
+            // for maybe in input_shares
+            //     .iter()
+            //     .take(self.num_nodes - self.num_faults - 1)
+            // {
+            //     if let Some(ref block) = maybe {
+            //         reconstructed_data.extend_from_slice(block);
+            //     }
+            // }
+
+            // let recomputed_shards = get_shards(&mut input_shares, k, n - k);
+            let recomputed_shards = input_shares
+                .into_iter()
+                .map(|maybe| {
+                    maybe.unwrap_or_else(|| {
+                        log::warn!("Missing data in input shares, returning empty shard");
+                        vec![]
                     })
-                    .collect::<Vec<_>>();
+                })
+                .collect::<Vec<_>>();
 
-                let d_prime_hashes: Vec<Hash> = bincode::deserialize(&d_prime).unwrap();
+            let d_prime_hashes: Vec<Hash> = bincode::deserialize(&d_prime).unwrap();
 
-                // log::info!(
-                //     "Recomputed shards: {:?} for instance_id: {}, c: {:?}",
-                //     recomputed_shards,
-                //     instance_id,
-                //     msg.c
-                // );
+            // log::info!(
+            //     "Recomputed shards: {:?} for instance_id: {}, c: {:?}",
+            //     recomputed_shards,
+            //     instance_id,
+            //     msg.c
+            // );
 
-                let recomputed_hashes: Vec<Hash> = recomputed_shards
-                    .iter()
-                    .map(|shard| do_hash(shard))
-                    .collect();
+            let recomputed_hashes: Vec<Hash> = recomputed_shards
+                .iter()
+                .map(|shard| do_hash(shard))
+                .collect();
 
-                // log::info!(
-                //     "after D′ hashes: {:?}, recomputed hashes: {:?}",
-                //     d_prime_hashes,
-                //     recomputed_hashes
-                // );
+            // log::info!(
+            //     "after D′ hashes: {:?}, recomputed hashes: {:?}",
+            //     d_prime_hashes,
+            //     recomputed_hashes
+            // );
+            
+            // log::info!(
+            //         " M is verified and consistent, delivering... for instance_id: {}",
+            //         instance_id
+            //     );
+            rbc_context.status = Status::TERMINATED;
+            let output_message = recomputed_shards.concat();
+            log::info!(
+                "RBC instance {} successfully terminated with output message of length {}",
+                instance_id,
+                output_message.len()
+            );
+            self.terminate(instance_id, output_message.clone()).await;
 
-                let all_match = recomputed_hashes == d_prime_hashes;
-
-                if all_match {
-                    log::info!(
-                        " M is verified and consistent, delivering... for instance_id: {}",
-                        instance_id
-                    );
-                    rbc_context.status = Status::TERMINATED;
-                    let output_message = recomputed_shards.concat();
-                    log::info!(
-                        "RBC instance {} successfully terminated with output message of length {}",
-                        instance_id,
-                        output_message.len()
-                    );
-                    self.terminate(instance_id, output_message).await;
-                    return;
-                } else {
-                    log::warn!(" M failed verification against D′, discarding");
-                    // empty Vec<u8>
-                    // TEMPORARY ASSERT
-                    assert!(instance_id / 10000 < self.num_faults);
-                    rbc_context.status = Status::TERMINATED;
-                    let empty_output: Vec<u8> = vec![];
-                    self.terminate(instance_id, empty_output).await; // bottom
-                    return;
-                }
-            } else {
-                //log warn H(d prime ) != c
-                log::warn!(
-                    "H(D′) does not match c for instance_id: {}, c: {:?}",
+            let rbc_context = self.rbc_context.entry(instance_id).or_default();
+            let all_match = recomputed_hashes == d_prime_hashes;
+            
+            if do_hash(&d_prime) == msg.c {
+                log::info!(
+                    "D′ matches c for instance_id: {}, c: {:?}",
                     instance_id,
                     msg.c
                 );
             }
+            else {
+                log::error!(
+                    "H(D′) does not match c for instance_id: {}, c: {:?}, deser_msg: {:?}, mismatch_hash: {:?}",
+                    instance_id,
+                    msg.c,
+                    output_message.clone(),
+                    do_hash(&d_prime)
+                );
+            }
+            if all_match {
+                log::info!(
+                    " M is verified and consistent, delivering... for instance_id: {}",
+                    instance_id
+                );
+                rbc_context.status = Status::TERMINATED;
+                let output_message = recomputed_shards.concat();
+                log::info!(
+                    "RBC instance {} successfully terminated with output message of length {}",
+                    instance_id,
+                    output_message.len()
+                );
+                //self.terminate(instance_id, output_message).await;
+                return;
+            } else {
+                log::warn!(" M failed verification against D′, discarding for instance_id: {}", instance_id);
+                // empty Vec<u8>
+                // TEMPORARY ASSERT
+                // assert!(instance_id / 10000 < self.num_faults);
+                // rbc_context.status = Status::TERMINATED;
+                // let empty_output: Vec<u8> = vec![];
+                //self.terminate(instance_id, empty_output).await; // bottom
+                return;
+            }
+            // } else {
+            //     //log warn H(d prime ) != c
+            //     log::warn!(
+            //         "H(D′) does not match c for instance_id: {}, c: {:?}",
+            //         instance_id,
+            //         msg.c
+            //     );
+            // }
         }
     }
 }
