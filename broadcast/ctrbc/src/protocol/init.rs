@@ -12,7 +12,7 @@ use network::{plaintcp::CancelHandler, Acknowledgement};
 impl Context {
     // Dealer sending message to everybody
     pub async fn start_init(self: &mut Context, msg:Vec<u8>, instance_id:usize) {
-        let shards = get_shards(msg, self.num_faults+1, 2*self.num_faults);
+        let shards = get_shards(msg, self.num_nodes-2*self.num_faults, 2*self.num_faults);
         
         let merkle_tree = construct_merkle_tree(shards.clone(),&self.hash_context);
         

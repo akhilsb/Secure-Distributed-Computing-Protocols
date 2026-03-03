@@ -62,7 +62,7 @@ impl Context {
                 }
             }
 
-            let status = reconstruct_data(&mut shards, self.num_faults+1 , 2*self.num_faults);
+            let status = reconstruct_data(&mut shards, self.num_nodes-2*self.num_faults, 2*self.num_faults);
             
             if status.is_err(){
                 log::error!("FATAL: Error in Lagrange interpolation {}",status.err().unwrap());
