@@ -72,7 +72,7 @@ impl Context {
             let shards:Vec<Vec<u8>> = shards.into_iter().map(| opt | opt.unwrap()).collect();
             
             let mut message = Vec::new();
-            for i in 0..self.num_faults+1{
+            for i in 0..self.num_nodes-2*self.num_faults{
                 message.extend(shards.get(i).clone().unwrap());
             }
 
