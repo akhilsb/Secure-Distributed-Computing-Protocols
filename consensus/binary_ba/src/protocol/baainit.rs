@@ -271,7 +271,7 @@ impl Context{
             let baa_rnd_state = &mut baa_rnd_state_tup.0;
             if baa_rnd_state.contains_key(&baa_round){
                 let rnd_state = baa_rnd_state.get_mut(&baa_round).unwrap();
-                if rnd_state.coin_shares_vec.len() < {
+                if rnd_state.coin_shares_vec.len() < self.num_nodes-2*self.num_faults{
                     rnd_state.add_partial_coin(share_sender, share);
                     terminate = rnd_state.aggregate_p_coins();
                 }
