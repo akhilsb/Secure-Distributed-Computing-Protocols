@@ -133,7 +133,7 @@ impl Context {
         data_entry.push(echo_msg.d_i.clone());
 
         // Check if 2t + 1 ECHOs for same (c, πᵢ)
-        if senders.len() >= 2 * self.num_faults + 1 && rbc_context.status == Status::ECHO {
+        if senders.len() >= self.num_nodes-self.num_faults && rbc_context.status == Status::ECHO {
             rbc_context.status = Status::READY;
             rbc_context.sent_ready = true;
             //send pi i if byzantine, otherwise clear the data of pi_i

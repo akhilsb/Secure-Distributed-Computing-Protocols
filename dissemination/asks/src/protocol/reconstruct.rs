@@ -98,7 +98,7 @@ impl Context{
         let mut secrets = Vec::new();
         for (share_map, (share,nonce)) in asks_state.secret_shares.iter_mut().zip(deser_share.shares.iter().zip(deser_share.nonce_shares.iter())){
             share_map.insert(share_sender , (share.clone(), nonce.clone()));
-            if share_map.len() == self.num_faults +1 {
+            if share_map.len() == self.num_nodes-2*self.num_faults {
                 // Interpolate polynomial shares and coefficients
                 let mut share_poly_shares = Vec::new();
                 let mut nonce_poly_shares = Vec::new();

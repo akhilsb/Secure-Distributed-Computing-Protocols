@@ -33,7 +33,7 @@ impl Context {
             let msg_length = msg.1.len();
             let msg_with_length_serialized = bincode::serialize(&(msg.1, msg_length)).unwrap();
             // Get encrypted text itself
-            let shards = get_shards(msg_with_length_serialized, self.num_faults+1, 2*self.num_faults);
+            let shards = get_shards(msg_with_length_serialized, self.num_nodes-2*self.num_faults, 2*self.num_faults);
             let merkle_tree = construct_merkle_tree(shards.clone(),&self.hash_context);
             roots_agg.push(merkle_tree.root());
             avid_tree.push((msg.0,shards,merkle_tree));

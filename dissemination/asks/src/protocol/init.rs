@@ -31,12 +31,12 @@ impl Context{
             else{
                 coefficients = vec![rand_field_element()];
             }
-            let sampled_coeffs: Vec<LargeField> = (1..self.num_faults+1).into_iter().map(|_| 
+            let sampled_coeffs: Vec<LargeField> = (1..self.num_nodes-2*self.num_faults).into_iter().map(|_| 
                 rand_field_element()
             ).collect();
             coefficients.extend(sampled_coeffs);
             
-            let nonce_coefficients: Vec<LargeField> = (0..self.num_faults+1).into_iter().map(|_| 
+            let nonce_coefficients: Vec<LargeField> = (0..self.num_nodes-2*self.num_faults).into_iter().map(|_| 
                 rand_field_element()
             ).collect();
     
@@ -126,7 +126,7 @@ impl Context{
         // Start Echo and Ready phases of broadcast
         // Broadcast commitment
         let comm_ser = bincode::serialize(&roots).unwrap();
-        let shards = get_shards(comm_ser, self.num_faults+1, 2*self.num_faults);
+        let shards = get_shards(comm_ser, self.num_nodes-2*self.num_faults, 2*self.num_faults);
         let shard_hashes = shards.iter().map(|shard| do_hash(shard.as_slice())).collect();
 
         let mt = MerkleTree::new(shard_hashes, &self.hash_context);

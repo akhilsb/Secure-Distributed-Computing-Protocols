@@ -32,7 +32,7 @@ impl Context{
 
         let size = ready_senders.len().clone();
 
-        if size == self.num_faults + 1{
+        if size == self.num_nodes-2*self.num_faults{
 
             // Sent ECHOs and getting a ready message for the same ECHO
             if ra_context.echo_root.is_some(){

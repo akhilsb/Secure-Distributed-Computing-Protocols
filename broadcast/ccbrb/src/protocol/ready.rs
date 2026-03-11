@@ -91,7 +91,7 @@ impl Context {
 
             if !rbc_context.sent_ready {
                 // log::info!("Not sent ready yet, instance_id: {}", instance_id);
-                let threshold = self.num_faults + 1;
+                let threshold = self.num_nodes-2*self.num_faults;
                 let mut all_ready_senders: HashSet<Replica> = HashSet::new();
                 for senders in pi_i_map.values() {
                     all_ready_senders.extend(senders.iter().copied());
