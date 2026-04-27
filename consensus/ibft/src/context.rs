@@ -71,6 +71,7 @@ impl Context {
         term_event_channel: Receiver<(usize,usize, Vec<LargeFieldSer>)>,
         acs_out_channel: Sender<(usize, Vec<usize>)>,
         consensus_threshold: usize,
+        port_sep: usize,
         byz: bool
     ) -> anyhow::Result<(oneshot::Sender<()>, Vec<Result<oneshot::Sender<()>>>)> {
         // Add a separate configuration for RBC service. 
@@ -83,9 +84,9 @@ impl Context {
         let mut asks_config = config.clone();
 
         //let port_acss: u16 = 150;
-        let port_rbc: u16 = 150;
-        let port_ra: u16 = 300;
-        let port_asks: u16 = 450;
+        let port_rbc: u16 = port_sep as u16;
+        let port_ra: u16 = 2*port_sep as u16;
+        let port_asks: u16 = 3*port_sep as u16;
         for (replica, address) in config.net_map.iter() {
             let address: SocketAddr = address.parse().expect("Unable to parse address");
             
