@@ -6,12 +6,13 @@ use types::Replica;
 #[derive(Debug,Clone)]
 pub struct MVBAExecState{
     pub instance_id: usize,
-    pub inp_value: Option<usize>,
+    pub inp_value: Option<Vec<u8>>,
 
     pub mvbas: HashMap<usize, MVBARoundState>,
     pub terminated_mvbas: HashSet<usize>,
 
-    pub output: Option<Vec<usize>>,
+    // Leader's output
+    pub output: Option<Vec<u8>>,
 }
 
 impl MVBAExecState {
@@ -39,7 +40,7 @@ impl MVBAExecState {
 pub struct MVBARoundState{
     pub instance_id: usize,
     pub round: usize,
-    pub l1_rbcs: HashMap<Replica, Replica>,
+    pub l1_rbcs: HashMap<Replica, Vec<u8>>,
 
     pub l2_rbcs: HashMap<Replica, HashSet<Replica>>,
     pub l2_rbc_vecs: HashMap<Replica, Vec<Replica>>,
@@ -87,7 +88,7 @@ impl MVBARoundState{
         }
     }
 
-    pub fn add_l1_rbc(&mut self, broadcaster: Replica, l1_rbc: Replica)-> bool{
+    pub fn add_l1_rbc(&mut self, broadcaster: Replica, l1_rbc: Vec<u8>)-> bool{
         self.l1_rbcs.insert(broadcaster, l1_rbc);
         // Init L2 RBC
         self.l1_rbcs.len() == self.num_nodes-self.num_faults

@@ -61,14 +61,14 @@ pub struct Context {
 
     /// Input and output request channels
     /// First: Instance id, Second: Number of secrets, Third: Reconstruction to all or none, Fourth: Request for reconstruction/sharing, Fifth: Reconstruction ID
-    pub inp_mvba_requests: Receiver<(usize, usize, Vec<LargeFieldSer>)>,
-    pub out_mvba_values: Sender<(usize, Vec<usize>)>
+    pub inp_mvba_requests: Receiver<(usize, Vec<u8>, Vec<LargeFieldSer>)>,
+    pub out_mvba_values: Sender<(usize, Vec<u8>)>
 }
 
 impl Context {
     pub fn spawn(config: Node,
-        input_reqs: Receiver<(usize, usize, Vec<LargeFieldSer>)>, 
-        output_shares: Sender<(usize, Vec<usize>)>,
+        input_reqs: Receiver<(usize, Vec<u8>, Vec<LargeFieldSer>)>, 
+        output_shares: Sender<(usize, Vec<u8>)>,
         byz: bool) -> anyhow::Result<(oneshot::Sender<()>, Vec<anyhow::Result<oneshot::Sender<()>>>)> {
         // Add a separate configuration for RBC service. 
 
@@ -258,21 +258,22 @@ impl Context {
                     let sender_party = ctrbc_msg.1;
                     let main_msg = ctrbc_msg.2;
 
-                    let deser_msg: (usize, usize, usize, Vec<usize>) = bincode::deserialize(&main_msg).unwrap();
+                    let deser_msg: (usize, usize, usize, Vec<u8>) = bincode::deserialize(&main_msg).unwrap();
                     if deser_msg.2 == 1{
                         self.process_l1_rbc_termination(
                             deser_msg.0, 
                             deser_msg.1, 
                             sender_party, 
-                            deser_msg.3[0]
+                            deser_msg.3
                         ).await;
                     }
                     else if deser_msg.2 == 2{
+                        let vec_parties: Vec<usize> = bincode::deserialize(&deser_msg.3).unwrap();
                         self.process_l2_rbc_termination(
                             deser_msg.0,
                             deser_msg.1,
                             sender_party,
-                            deser_msg.3
+                            vec_parties
                         ).await;
                     }
                 },

@@ -14,7 +14,7 @@ impl Context{
     pub async fn start_fin_mvba(&mut self, 
         instance_id: usize,
         round: usize,
-        rbc_value: Option<usize>,
+        rbc_value: Option<Vec<u8>>,
     ){
         log::info!("Starting FIN MVBA for instance {} in round {} with value {:?}", instance_id, round, rbc_value);
         if !self.round_state.contains_key(&instance_id){
@@ -42,9 +42,9 @@ impl Context{
             return;
         }
 
-        let rbc_value = mvba_exec_state.inp_value.unwrap();
+        let rbc_value = mvba_exec_state.inp_value.clone().unwrap();
         
-        let ctrbc_msg = (instance_id, round as usize, 1 as usize, vec![rbc_value]);
+        let ctrbc_msg = (instance_id, round as usize, 1 as usize, rbc_value);
         let ser_msg = bincode::serialize(&ctrbc_msg).unwrap();
         
         let _status = self.ctrbc_req.send(ser_msg).await;
@@ -54,7 +54,7 @@ impl Context{
         instance_id: usize, 
         round: usize, 
         rbc_broadcaster: usize,
-        broadcast_val: usize
+        broadcast_val: Vec<u8>
     ){
         log::info!("Received l1 RBC termination for instance {} and round {} from broadcaster {}",instance_id, round, rbc_broadcaster);
         if !self.round_state.contains_key(&instance_id){
@@ -90,13 +90,13 @@ impl Context{
 
             log::info!("Initializing L2 RBC for instance {} and round {}, vec: {:?}", instance_id, round, l2_rbc_vec);
             
-
-            let ctrbc_msg = (instance_id, round, 2 as usize, l2_rbc_vec);
+            let ser_msg = bincode::serialize(&l2_rbc_vec).unwrap();
+            let ctrbc_msg = (instance_id, round, 2 as usize, ser_msg);
             let ser_msg = bincode::serialize(&ctrbc_msg).unwrap();
             let _status = self.ctrbc_req.send(ser_msg).await;
         }
         // Also check change in l2/final agreement status because of l1 delivery
-        self.verify_l2_rbc_status_check(instance_id, round, Some((rbc_broadcaster,broadcast_val)), None).await;
+        self.verify_l2_rbc_status_check(instance_id, round, Some(rbc_broadcaster), None).await;
     }
 
     pub async fn process_l2_rbc_termination(&mut self,
@@ -147,7 +147,7 @@ impl Context{
     pub async fn verify_l2_rbc_status_check(&mut self, 
         instance_id: usize,
         round: usize,
-        new_l1_rbc: Option<(usize, usize)>,
+        new_l1_rbc: Option<usize>,
         
         new_l2_rbc: Option<usize>
     ){
@@ -162,7 +162,7 @@ impl Context{
         let mvba_round_state = mvba_exec_state.mvbas.get_mut(&round).unwrap();
 
         if new_l1_rbc.is_some(){
-            let l1_rbc_sender = new_l1_rbc.unwrap().0;
+            let l1_rbc_sender = new_l1_rbc.unwrap();
             // Iterate through l2 RBCs and check if the l1 list is empty
             for rep in 0..self.num_nodes{
                 if mvba_round_state.l2_rbcs.contains_key(&rep){
@@ -475,21 +475,10 @@ impl Context{
             if bba_output == 2{
                 let leader_id = mvba_round_state.leader_id.unwrap();
                 if mvba_round_state.l2_rbc_vecs.contains_key(&leader_id){
-                    let l2_rbc_vec = mvba_round_state.l2_rbc_vecs.get(&leader_id).unwrap();
-                    let mut rbc_outputs = Vec::new();
-                    for party in l2_rbc_vec{
-                        if mvba_round_state.l1_rbcs.contains_key(party){
-                            let l1_rbc = mvba_round_state.l1_rbcs.get(party).unwrap();
-                            rbc_outputs.push(l1_rbc.clone());
-                        }
-                        else{
-                            log::info!("Did not receive RBC of party {} yet, waiting for it in instance id {}", party, instance_id);
-                            return;
-                        }
-                    }
+                    let rbc_outputs = mvba_round_state.l1_rbcs.get(&leader_id).unwrap();
                     log::info!("Consensus output in instance {} is {:?}", instance_id, rbc_outputs);
                     mvba_exec_state.output = Some(rbc_outputs.clone());
-                    let _status = self.out_mvba_values.send((instance_id, rbc_outputs)).await;
+                    let _status = self.out_mvba_values.send((instance_id, rbc_outputs.clone())).await;
                 }
                 else{
                     log::info!("Did not terminate leader's RBC yet in instance id {}, waiting for it", instance_id);
