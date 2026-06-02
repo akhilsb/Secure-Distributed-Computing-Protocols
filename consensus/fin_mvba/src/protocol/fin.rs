@@ -48,6 +48,7 @@ impl Context{
         let ser_msg = bincode::serialize(&ctrbc_msg).unwrap();
         
         let _status = self.ctrbc_req.send(ser_msg).await;
+        Box::pin(self.verify_round_termination(instance_id, round)).await;
     }
 
     pub async fn process_l1_rbc_termination(&mut self, 
@@ -97,6 +98,7 @@ impl Context{
         }
         // Also check change in l2/final agreement status because of l1 delivery
         self.verify_l2_rbc_status_check(instance_id, round, Some(rbc_broadcaster), None).await;
+        self.verify_round_termination(instance_id, round).await;
     }
 
     pub async fn process_l2_rbc_termination(&mut self,
@@ -478,13 +480,15 @@ impl Context{
         }
 
         let mvba_round_state = mvba_exec_state.mvbas.get_mut(&round).unwrap();
-        if mvba_round_state.bba_output.is_some() && mvba_round_state.leader_id.is_some() && mvba_exec_state.output.is_none(){
+        if mvba_round_state.bba_output.is_some() 
+        && mvba_round_state.leader_id.is_some() 
+        && mvba_exec_state.output.is_none(){
             // Round is terminated
-            log::info!("Round {} for instance {} is terminated with output {}", round, instance_id, mvba_round_state.bba_output.unwrap());
             let bba_output = mvba_round_state.bba_output.unwrap();
             if bba_output == 2{
                 let leader_id = mvba_round_state.leader_id.unwrap();
-                if mvba_round_state.l2_rbc_vecs.contains_key(&leader_id){
+                if mvba_round_state.l2_rbc_vecs.contains_key(&leader_id) && mvba_round_state.l1_rbcs.contains_key(&leader_id){
+                    log::info!("Round {} for instance {} is terminated with output {}", round, instance_id, mvba_round_state.bba_output.unwrap());
                     let rbc_outputs = mvba_round_state.l1_rbcs.get(&leader_id).unwrap();
                     log::info!("Consensus output in instance {} is {:?}", instance_id, rbc_outputs);
                     mvba_exec_state.output = Some(rbc_outputs.clone());
