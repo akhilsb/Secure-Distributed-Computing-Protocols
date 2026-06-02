@@ -147,8 +147,7 @@ impl Context{
     pub async fn verify_l2_rbc_status_check(&mut self, 
         instance_id: usize,
         round: usize,
-        new_l1_rbc: Option<usize>,
-        
+        new_l1_rbc: Option<usize>, 
         new_l2_rbc: Option<usize>
     ){
         if !self.round_state.contains_key(&instance_id){
@@ -276,19 +275,23 @@ impl Context{
 
         if mvba_round_state.l3_approved_witnesses.len() >= self.num_nodes - self.num_faults && !mvba_round_state.coin_broadcasted{
             // // Create and broadcast coin message
-            if !self.coin_shares.contains_key(&instance_id){
-                log::error!("Error in coin tossing: Coin shares not found for instance {}", instance_id);
+            if !self.le_coin_shares.contains_key(&instance_id){
+                log::error!("Error in coin tossing: Leader election coin shares not found for instance {}", instance_id);
                 return;
             }
-            let instance_coin_shares = self.coin_shares.get_mut(&instance_id).unwrap();
+            let instance_coin_shares = self.le_coin_shares.get_mut(&instance_id).unwrap();
             if instance_coin_shares.is_empty(){
-                log::error!("Error in coin tossing: Coin shares are empty for instance {}", instance_id);
+                log::error!("Error in coin tossing: Leader election coin shares are empty for instance {}", instance_id);
                 return;
             }
             log::info!("Broadcasting coin for instance {} and round {}", instance_id, round);
             mvba_round_state.coin_broadcasted = true;
 
-            let coin_share = instance_coin_shares.pop_front().unwrap();
+            if instance_coin_shares.len() < round{
+                log::error!("Not enough coin shares for leader election, reconfiguration required");
+                return;
+            }
+            let coin_share = instance_coin_shares[round-1];
             
             let coin_msg = ProtMsg::LeaderCoin(
                 instance_id, 
@@ -357,17 +360,24 @@ impl Context{
             mvba_round_state.leader_id = Some(leader_id);
 
             let mut coin_shares_ba = Vec::new();
-            if !self.coin_shares.contains_key(&instance_id){
-                log::error!("Error in coin tossing: Coin shares not found for instance {}", instance_id);
+            if !self.bba_coin_shares.contains_key(&instance_id){
+                log::error!("Error in coin tossing: BBA coin shares not found for instance {}", instance_id);
                 return;
             }
-            let coin_shares = self.coin_shares.get_mut(&instance_id).unwrap();
-            for _ in 0..5{
-                if coin_shares.len() == 0{
-                    log::error!("Error in coin tossing: Not enough coins left for instance {}", instance_id);
+            let coin_shares = self.bba_coin_shares.get(&instance_id).unwrap();
+            // Use deterministic coin indices based on the round so that every party
+            // feeds the same coins into Binary BA. Each round consumes a fresh,
+            // non-overlapping window of COINS_PER_ROUND coins:
+            //   round r -> indices [r*COINS_PER_ROUND, r*COINS_PER_ROUND + COINS_PER_ROUND)
+            const COINS_PER_ROUND: usize = 15;
+            let start_index = round * COINS_PER_ROUND;
+            for offset in 0..COINS_PER_ROUND{
+                let index = start_index + offset;
+                if index >= coin_shares.len(){
+                    log::error!("Error in coin tossing: Not enough BBA coins for instance {} (need index {}, have {})", instance_id, index, coin_shares.len());
                     return;
                 }
-                coin_shares_ba.push(coin_shares.pop_front().unwrap());
+                coin_shares_ba.push(coin_shares[index].clone());
             }
 
             let bin_aa_instance = 100*instance_id + round;

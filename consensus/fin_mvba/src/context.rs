@@ -46,7 +46,8 @@ pub struct Context {
     
     /// State for MVBA
     pub round_state: HashMap<usize,MVBAExecState>,
-    pub coin_shares: HashMap<usize, VecDeque<LargeFieldSer>>,
+    pub bba_coin_shares: HashMap<usize, VecDeque<LargeFieldSer>>,
+    pub le_coin_shares: HashMap<usize, VecDeque<LargeFieldSer>>,
     pub terminated_rounds: HashSet<usize>,
     pub instance_id_bin_aa_map: HashMap<usize, (usize, usize)>,
 
@@ -142,7 +143,8 @@ impl Context {
                 
                 round_state: HashMap::default(),
                 terminated_rounds: HashSet::default(),
-                coin_shares: HashMap::default(),
+                bba_coin_shares: HashMap::default(),
+                le_coin_shares: HashMap::default(),
                 instance_id_bin_aa_map: HashMap::default(),
 
                 ctrbc_req: ctrbc_req_send_channel,
@@ -244,8 +246,13 @@ impl Context {
                         return;
                     }
                     let req_msg = req_msg.unwrap();
-                    // Save coins first
-                    self.coin_shares.insert(req_msg.0, VecDeque::from(req_msg.2.clone()));
+                    // Save coins first, dividing them between BBA and leader election.
+                    // Set aside half the shares for BBA and half for leader election.
+                    let mut all_shares = req_msg.2.clone();
+                    let split_point = all_shares.len() / 2;
+                    let le_shares = all_shares.split_off(split_point);
+                    self.bba_coin_shares.insert(req_msg.0, VecDeque::from(all_shares));
+                    self.le_coin_shares.insert(req_msg.0, VecDeque::from(le_shares));
                     self.start_fin_mvba(req_msg.0, 1, Some(req_msg.1)).await;
                 },
                 ctrbc_msg = self.ctrbc_out_recv.recv() => {
